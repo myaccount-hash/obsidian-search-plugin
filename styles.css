@@ -1,0 +1,5 @@
+.suggestion-highlight {
+  background-color: var(--text-highlight-bg);
+  color: var(--text-normal);
+  font-weight: 600;
+}

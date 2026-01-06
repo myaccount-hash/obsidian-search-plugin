@@ -1,0 +1,13 @@
+{
+  "openCounts": {
+    "notes/Home.md": 2,
+    "docs/コンピュータ.md": 5,
+    "docs/記録・ノート.md": 5,
+    "docs/TCPキャプチャ.md": 5,
+    "docs/tcpdumpコマンド.md": 6,
+    "docs/端末とシェル.md": 1
+  },
+  "searchDirs": [
+    "docs"
+  ]
+}

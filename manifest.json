@@ -1,0 +1,9 @@
+{
+  "id": "search-plugin",
+  "name": "Search Plugin",
+  "version": "1.0.0",
+  "minAppVersion": "0.15.0",
+  "description": "Search note contents",
+  "author": "Author",
+  "isDesktopOnly": false
+}
