@@ -1,4 +1,4 @@
-import { Plugin, TFile, FuzzySuggestModal, FuzzyMatch, SearchResult, prepareFuzzySearch, setIcon, PluginSettingTab, App, Setting } from 'obsidian';
+import { Plugin, TFile, FuzzySuggestModal, FuzzyMatch, SearchResult, prepareFuzzySearch, setIcon, PluginSettingTab, App, Setting, MarkdownView } from 'obsidian';
 
 interface PluginSettings {
   searchDirs: string[];
@@ -183,6 +183,27 @@ class SearchModal extends FuzzySuggestModal<SearchItem> {
     return matches;
   }
 
+  findFirstMatchIndex(text: string, query: string): number {
+    if (!query) {
+      return -1;
+    }
+    return text.toLowerCase().indexOf(query.toLowerCase());
+  }
+
+  indexToPos(text: string, index: number): { line: number; ch: number } {
+    let line = 0;
+    let ch = 0;
+    for (let i = 0; i < index && i < text.length; i++) {
+      if (text[i] === '\n') {
+        line++;
+        ch = 0;
+      } else {
+        ch++;
+      }
+    }
+    return { line, ch };
+  }
+
   appendHighlightedText(el: HTMLElement, text: string, matches: [number, number][]) {
     if (matches.length === 0) {
       el.appendText(text);
@@ -233,7 +254,18 @@ class SearchModal extends FuzzySuggestModal<SearchItem> {
     contentEl.style.fontSize = '0.9em';
   }
 
-  onChooseItem(item: SearchItem) {
-    this.app.workspace.getLeaf().openFile(item.file);
+  async onChooseItem(item: SearchItem) {
+    const leaf = this.app.workspace.getLeaf();
+    await leaf.openFile(item.file);
+    const index = this.findFirstMatchIndex(item.snippet, this.queryText);
+    if (index === -1) {
+      return;
+    }
+    const view = this.app.workspace.getActiveViewOfType(MarkdownView);
+    if (!view) {
+      return;
+    }
+    const pos = this.indexToPos(item.snippet, index + this.queryText.length);
+    view.editor.setCursor(pos);
   }
 }

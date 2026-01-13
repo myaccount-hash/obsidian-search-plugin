@@ -154,6 +154,25 @@ var SearchModal = class extends import_obsidian.FuzzySuggestModal {
     }
     return matches;
   }
+  findFirstMatchIndex(text, query) {
+    if (!query) {
+      return -1;
+    }
+    return text.toLowerCase().indexOf(query.toLowerCase());
+  }
+  indexToPos(text, index) {
+    let line = 0;
+    let ch = 0;
+    for (let i = 0; i < index && i < text.length; i++) {
+      if (text[i] === "\n") {
+        line++;
+        ch = 0;
+      } else {
+        ch++;
+      }
+    }
+    return { line, ch };
+  }
   appendHighlightedText(el, text, matches) {
     if (matches.length === 0) {
       el.appendText(text);
@@ -196,7 +215,18 @@ var SearchModal = class extends import_obsidian.FuzzySuggestModal {
     contentEl.style.opacity = "0.5";
     contentEl.style.fontSize = "0.9em";
   }
-  onChooseItem(item) {
-    this.app.workspace.getLeaf().openFile(item.file);
+  async onChooseItem(item) {
+    const leaf = this.app.workspace.getLeaf();
+    await leaf.openFile(item.file);
+    const index = this.findFirstMatchIndex(item.snippet, this.queryText);
+    if (index === -1) {
+      return;
+    }
+    const view = this.app.workspace.getActiveViewOfType(import_obsidian.MarkdownView);
+    if (!view) {
+      return;
+    }
+    const pos = this.indexToPos(item.snippet, index + this.queryText.length);
+    view.editor.setCursor(pos);
   }
 };
