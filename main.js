@@ -23,38 +23,13 @@ __export(main_exports, {
 });
 module.exports = __toCommonJS(main_exports);
 var import_obsidian = require("obsidian");
-var DEFAULT_SETTINGS = {
-  searchDirs: []
-};
 var SearchPlugin = class extends import_obsidian.Plugin {
   async onload() {
-    await this.loadSettings();
     this.addCommand({
       id: "search",
       name: "Search",
       callback: () => new SearchModal(this.app, this).open()
     });
-    this.addSettingTab(new SearchSettingTab(this.app, this));
-  }
-  async loadSettings() {
-    this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
-  }
-  async saveSettings() {
-    await this.saveData(this.settings);
-  }
-};
-var SearchSettingTab = class extends import_obsidian.PluginSettingTab {
-  constructor(app, plugin) {
-    super(app, plugin);
-    this.plugin = plugin;
-  }
-  display() {
-    const { containerEl } = this;
-    containerEl.empty();
-    new import_obsidian.Setting(containerEl).setName("Search directories").setDesc("Comma-separated directory paths. Empty for all directories.").addText((text) => text.setPlaceholder("docs,notes").setValue(this.plugin.settings.searchDirs.join(",")).onChange(async (value) => {
-      this.plugin.settings.searchDirs = value.split(",").map((s) => s.trim()).filter((s) => s);
-      await this.plugin.saveSettings();
-    }));
   }
 };
 var SearchModal = class extends import_obsidian.FuzzySuggestModal {
@@ -66,10 +41,11 @@ var SearchModal = class extends import_obsidian.FuzzySuggestModal {
   }
   async onOpen() {
     let files = this.app.vault.getMarkdownFiles();
-    if (this.plugin.settings.searchDirs.length > 0) {
-      files = files.filter(
-        (file) => this.plugin.settings.searchDirs.some((dir) => file.path.startsWith(dir))
-      );
+    const view = this.app.workspace.getActiveViewOfType(import_obsidian.MarkdownView);
+    const basePath = view?.file?.parent?.path ?? "";
+    if (basePath) {
+      const prefix = basePath + "/";
+      files = files.filter((file) => file.path.startsWith(prefix));
     }
     for (const file of files) {
       const content = await this.app.vault.cachedRead(file);
