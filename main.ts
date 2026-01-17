@@ -1,62 +1,12 @@
-import { Plugin, TFile, FuzzySuggestModal, FuzzyMatch, SearchResult, prepareFuzzySearch, setIcon, PluginSettingTab, App, Setting, MarkdownView } from 'obsidian';
-
-interface PluginSettings {
-  searchDirs: string[];
-}
-
-const DEFAULT_SETTINGS: PluginSettings = {
-  searchDirs: []
-};
+import { Plugin, TFile, FuzzySuggestModal, FuzzyMatch, SearchResult, prepareFuzzySearch, setIcon, MarkdownView } from 'obsidian';
 
 export default class SearchPlugin extends Plugin {
-  settings: PluginSettings;
-
   async onload() {
-    await this.loadSettings();
-
     this.addCommand({
       id: 'search',
       name: 'Search',
       callback: () => new SearchModal(this.app, this).open()
     });
-
-    this.addSettingTab(new SearchSettingTab(this.app, this));
-  }
-
-  async loadSettings() {
-    this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
-  }
-
-  async saveSettings() {
-    await this.saveData(this.settings);
-  }
-}
-
-class SearchSettingTab extends PluginSettingTab {
-  plugin: SearchPlugin;
-
-  constructor(app: App, plugin: SearchPlugin) {
-    super(app, plugin);
-    this.plugin = plugin;
-  }
-
-  display(): void {
-    const { containerEl } = this;
-    containerEl.empty();
-
-    new Setting(containerEl)
-      .setName('Search directories')
-      .setDesc('Comma-separated directory paths. Empty for all directories.')
-      .addText(text => text
-        .setPlaceholder('docs,notes')
-        .setValue(this.plugin.settings.searchDirs.join(','))
-        .onChange(async (value) => {
-          this.plugin.settings.searchDirs = value
-            .split(',')
-            .map(s => s.trim())
-            .filter(s => s);
-          await this.plugin.saveSettings();
-        }));
   }
 }
 
@@ -78,10 +28,11 @@ class SearchModal extends FuzzySuggestModal<SearchItem> {
   async onOpen() {
     let files = this.app.vault.getMarkdownFiles();
 
-    if (this.plugin.settings.searchDirs.length > 0) {
-      files = files.filter(file =>
-        this.plugin.settings.searchDirs.some(dir => file.path.startsWith(dir))
-      );
+    const view = this.app.workspace.getActiveViewOfType(MarkdownView);
+    const basePath = view?.file?.parent?.path ?? '';
+    if (basePath) {
+      const prefix = basePath + '/';
+      files = files.filter(file => file.path.startsWith(prefix));
     }
 
     for (const file of files) {
